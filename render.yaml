@@ -3,6 +3,6 @@ services:
     name: somos-educa
     env: python
     plan: free
-    pythonVersion: "3.11.9"
+    pythonVersion: "3.11.0"
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
