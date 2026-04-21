@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação - {{ aluno_nome }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .progress-container {
+            margin-bottom: 2rem;
+        }
+        .question-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background-color: #f8f9fa;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+        .group-info {
+            background-color: #e9ecef;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .stage-option {
+            margin-bottom: 0.5rem;
+        }
+        .stage-option input {
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="mb-4">Avaliação de {{ aluno_nome }}</h2>
+        
+        <!-- Barra de progresso geral -->
+        <div class="progress-container">
+            <h5>Progresso Geral</h5>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" 
+                     style="width: {{ (grupo_index / total_grupos * 100) }}%" 
+                     aria-valuenow="{{ grupo_index }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="{{ total_grupos }}">
+                    {{ grupo_index + 1 }} de {{ total_grupos }} grupos
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações do grupo atual -->
+        <div class="group-info">
+            <h4>{{ grupo.nome }}</h4>
+            <div class="progress">
+                <div class="progress-bar bg-info" role="progressbar" 
+                     style="width: {{ ((questao_index + 1) / grupo.questoes|length * 100) }}%" 
+                     aria-valuenow="{{ questao_index + 1 }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="{{ grupo.questoes|length }}">
+                    Questão {{ questao_index + 1 }} de {{ grupo.questoes|length }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Formulário de questão -->
+        <form method="POST">
+            <input type="hidden" name="grupo_index" value="{{ grupo_index }}">
+            <input type="hidden" name="questao_index" value="{{ questao_index }}">
+            
+            <div class="question-card">
+                <h5 class="mb-3">
+                    {% if session['avaliacao']['tipo'] == 'fundamental' %}
+                        Habilidade: {{ questao.descricao }}
+                    {% else %}
+                        Direito: {{ questao.descricao }}
+                    {% endif %}
+                </h5>
+                
+                <div class="mb-3">
+                    <label class="form-label">Selecione o estágio de desenvolvimento:</label>
+                    
+                    {% for estagio in questao.estagios %}
+                        <div class="stage-option form-check">
+                            <input class="form-check-input" type="radio" 
+                                   name="estagio" id="estagio{{ estagio.numero }}" 
+                                   value="{{ estagio.numero }}"
+                                   {% if resposta == estagio.numero %}checked{% endif %}>
+                            <label class="form-check-label" for="estagio{{ estagio.numero }}">
+                                <strong>Estágio {{ estagio.numero }}:</strong> {{ estagio.descricao }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Botões de navegação -->
+            <div class="nav-buttons">
+                <div>
+                    {% if grupo_index > 0 or questao_index > 0 %}
+                        <button type="submit" name="action" value="anterior" class="btn btn-secondary">
+                            Anterior
+                        </button>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    {% if questao_index < grupo.questoes|length - 1 %}
+                        <button type="submit" name="action" value="proxima" class="btn btn-primary">
+                            Próxima Questão
+                        </button>
+                    {% elif grupo_index < total_grupos - 1 %}
+                        <button type="submit" name="action" value="proximo_grupo" class="btn btn-info">
+                            Próximo Grupo ({{ session['avaliacao']['grupos'][grupo_index + 1].nome }})
+                        </button>
+                    {% else %}
+                        <button type="submit" name="action" value="finalizar" class="btn btn-success">
+                            Finalizar Avaliação
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

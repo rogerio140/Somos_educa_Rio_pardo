@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Erro</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error-box {
+            border: 2px solid #ff4444;
+            padding: 20px;
+            background-color: #ffe6e6;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚠️ Ocorreu um erro</h1>
+    <div class="error-box">
+        <p>{{ error }}</p>
+    </div>
+    <a href="{{ url_for('login') }}">Voltar ao Login</a>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card custom-card">
+            <div class="card-body p-4">
+                <h2 class="card-title text-center mb-4">Login</h2>
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="id_plurall" class="form-label">ID Plurall</label>
+                        <input type="text" 
+                               id="id_plurall"
+                               name="id_plurall" 
+                               class="form-control form-control-lg"
+                               placeholder="Digite seu ID Plurall"
+                               required
+                               autofocus>
+                    </div>
+                    <div class="mb-3 text-end">
+                        <a href="#" class="small text-muted" data-bs-toggle="modal" data-bs-target="#helpModal">
+                            Não sabe seu ID Plurall?
+                        </a>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-lg">
+                        Entrar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ajuda -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="helpModalLabel">Como encontrar meu ID Plurall?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ol>
+                    <li>Acesse o Plurall: Use seu nome de usuário ou e-mail e senha para entrar na plataforma.</li>
+                    <li>Vá para Meu Perfil: No canto superior direito da tela, clique no seu nome ou avatar.</li>
+                    <li>Dados Pessoais e Acesso: Dentro de "Meu Perfil", clique na opção "Dados Pessoais e Acesso".</li>
+                    <li>Localize o ID Plurall: O ID estará listado nesta seção.</li>
+                </ol>
+                <div class="alert alert-info mt-3">
+                    Caso ainda tenha dificuldades, entre em contato com o suporte da sua escola.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendi</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+    <h2>Avaliação de {{ aluno_nome }}</h2>
+    <p>Selecione um Campo de Experiência:</p>
+</div>
+
+<div class="campos-container">
+    {% for campo, progresso in progresso.items() %}
+    <a href="{{ url_for('exibir_campo', campo_nome=campo) }}" class="campo-card">
+        <h3>{{ campo }}</h3>
+        <div class="progresso">
+            <div class="barra" style="width: {{ progresso * 100 }}%"></div>
+            <span>{{ "%.0f"|format(progresso * 100) }}% completo</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div class="acoes">
+    <form action="{{ url_for('finalizar_avaliacao') }}" method="post">
+        <button type="submit" class="btn-finalizar">Finalizar Avaliação</button>
+    </form>
+</div>
+{% endblock %}

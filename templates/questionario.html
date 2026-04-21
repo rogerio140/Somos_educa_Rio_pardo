@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="questionario-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">{{ aluno_nome }}</h2>
+            <small class="text-muted">
+                Matrícula: {{ aluno_matricula }} | 
+                Questão {{ current_index }} de {{ total_questoes }}
+            </small>
+        </div>
+        <div class="progress-indicator">
+            {{ ((current_index / total_questoes) * 100)|round(0) }}% Completo
+        </div>
+    </div>
+    
+    <form method="post">
+        <input type="hidden" name="current_index" value="{{ current_index }}">
+        
+        <div class="mb-4">
+            {% if questao.campo_experiencia %}
+            <div class="campo-experiencia mb-3">
+                <span class="badge bg-info">{{ questao.campo_experiencia }}</span>
+            </div>
+            {% elif questao.disciplina %}
+            <div class="disciplina mb-3">
+                <span class="badge bg-info">{{ questao.disciplina }}</span>
+            </div>
+            {% endif %}
+            
+            <h3 class="mb-3">
+                {% if questao.direito %}
+                    {{ questao.direito }}
+                {% elif questao.habilidade %}
+                    {{ questao.habilidade }}
+                {% endif %}
+            </h3>
+            
+            <div class="estagios-list">
+                {% for estagio in questao.estagios %}
+                <div class="form-check estagio-option {% if resposta == estagio.numero %}selected{% endif %}">
+                    <input class="form-check-input" 
+                           type="radio" 
+                           name="estagio" 
+                           id="estagio{{ estagio.numero }}" 
+                           value="{{ estagio.numero }}" 
+                           {% if resposta == estagio.numero %}checked{% endif %}
+                           required>
+                    <label class="form-check-label w-100" for="estagio{{ estagio.numero }}">
+                        <div class="estagio-header">
+                            <strong>Estágio {{ estagio.numero }}:</strong>
+                        </div>
+                        <p class="estagio-descricao mb-0">{{ estagio.descricao }}</p>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            {% if current_index > 1 %}
+            <button type="submit" name="action" value="anterior" class="btn btn-outline-primary">
+                ← Anterior
+            </button>
+            {% else %}
+            <div></div>
+            {% endif %}
+            
+            {% if current_index < total_questoes %}
+            <button type="submit" name="action" value="proxima" class="btn btn-primary">
+                Próxima →
+            </button>
+            {% else %}
+            <button type="submit" name="action" value="finalizar" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Finalizar
+            </button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<style>
+    .estagio-option {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    .estagio-option:hover {
+        background-color: #f8f9fa;
+    }
+    .estagio-option.selected {
+        background-color: #e2f0ff;
+        border-color: #86b7fe;
+    }
+    .estagio-header {
+        margin-bottom: 0.5rem;
+    }
+    .estagio-descricao {
+        color: #495057;
+    }
+</style>
+{% endblock %}

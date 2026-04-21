@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+    <h2>{{ campo_nome }}</h2>
+    <a href="{{ url_for('selecionar_campo') }}" class="btn-voltar">← Voltar</a>
+</div>
+
+<form method="post">
+    {% for direito in direitos %}
+    <div class="questao">
+        <h3>{{ direito.direito }}</h3>
+        <div class="opcoes">
+            {% for estagio in direito.estagios %}
+            <label class="opcao">
+                <input type="radio" name="questao_{{ direito.id }}" 
+                       value="{{ estagio.numero }}"
+                       {% if respostas.get(direito.id|string) == estagio.numero %}checked{% endif %}>
+                <span class="numero-estagio">{{ estagio.numero }}</span>
+                <span class="descricao">{{ estagio.descricao }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    <div class="acoes">
+        <button type="submit" class="btn-salvar">Salvar Progresso</button>
+    </div>
+</form>
+{% endblock %}

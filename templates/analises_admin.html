@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Análises Administrativas</h2>
+        <div>
+            <a href="{{ url_for('exportar_xlsx') }}" class="btn btn-success">
+                <i class="bi bi-file-excel"></i> Exportar para Excel
+            </a>
+            <a href="{{ url_for('exportar_xlsx') }}" class="btn btn-primary ms-2">
+                <i class="bi bi-download"></i> Outros Formatos
+            </a>
+        </div>
+    </div>
+    
+    <div class="card my-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Progresso Diário</h4>
+            <small class="text-muted">Últimos 15 dias</small>
+        </div>
+        <div class="card-body">
+            {% if progresso_diario.datas %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Avaliações Realizadas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dia, valor in zip(progresso_diario.datas, progresso_diario.valores) %}
+                                <tr>
+                                    <td>{{ dia }}</td>
+                                    <td>{{ valor }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">Dados de progresso diário não disponíveis</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card my-4">
+        <div class="card-header">
+            <h4>Top Professores</h4>
+        </div>
+        <div class="card-body">
+            {% if top_professores %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Posição</th>
+                                <th>Professor</th>
+                                <th>Alunos Avaliados</th>
+                                <th>Avaliações Realizadas</th>
+                                <th>Tempo Médio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prof in top_professores %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ prof.nome }}</td>
+                                    <td>{{ prof.alunos }}</td>
+                                    <td>{{ prof.avaliacoes }}</td>
+                                    <td>{{ prof.tempo_medio }} min</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">Dados de professores não disponíveis</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card my-4">
+        <div class="card-header">
+            <h4>Desempenho por Área</h4>
+        </div>
+        <div class="card-body">
+            {% if desempenho_areas %}
+                <div class="row">
+                    {% for area in desempenho_areas %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-{{ 'primary' if area.area == 'Direitos' else 'info' }} text-white">
+                                    <h5 class="mb-0">{{ area.area }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-1"><strong>Média de Estágio:</strong> {{ area.media }}</p>
+                                    <p class="mb-0"><strong>Alunos Avaliados:</strong> {{ area.alunos }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">Dados de desempenho por área não disponíveis</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-header {
+        background-color: #f8f9fa;
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+    .bg-primary {
+        background-color: #4472C4 !important;
+    }
+    .bg-info {
+        background-color: #70AD47 !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cabeçalho Aprimorado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-5 fw-bold text-black">
+                <i class="bi bi-mortarboard me-2"></i>Painel Ensino Fundamental
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('painel_admin') }}" class="text-decoration-none">Admin</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Fundamental</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('painel_admin') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                <i class="bi bi-box-arrow-left me-1"></i> Sair
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros e Relatórios -->
+    <div class="row mb-4">
+        <!-- Filtros -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros de Seleção</h5>
+                    {% if escola_selecionada or turma_selecionada or aluno_selecionado %}
+                    <a href="{{ url_for('painel_fundamental') }}" class="btn btn-sm btn-outline-light">
+                        <i class="bi bi-x-circle me-1"></i> Limpar Filtros
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{{ url_for('painel_fundamental') }}" class="needs-validation" novalidate>
+                        <div class="row g-3">
+                            <!-- Escola -->
+                            <div class="col-md-4">
+                                <label for="escola_id" class="form-label fw-bold">Escola</label>
+                                <select class="form-select" id="escola_id" name="escola_id" required onchange="this.form.submit()">
+                                    <option value="">Selecione uma escola</option>
+                                    {% for escola in escolas %}
+                                    <option value="{{ escola.id }}" {% if escola.id == escola_selecionada %}selected{% endif %}>
+                                        {{ escola.nome }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Turma -->
+                            <div class="col-md-4">
+                                <label for="turma_id" class="form-label fw-bold">Turma</label>
+                                <select class="form-select" id="turma_id" name="turma_id" {% if not turmas %}disabled{% endif %} onchange="this.form.submit()">
+                                    <option value="">Selecione uma turma</option>
+                                    {% for turma in turmas %}
+                                    <option value="{{ turma.id }}" {% if turma.id == turma_selecionada %}selected{% endif %}>
+                                        {{ turma.nome }} ({{ turma.ano_serie }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Aluno -->
+                            <div class="col-md-4">
+                                <label for="aluno_matricula" class="form-label fw-bold">Aluno</label>
+                                <select class="form-select" id="aluno_matricula" name="aluno_matricula" {% if not alunos %}disabled{% endif %} onchange="this.form.submit()">
+                                    <option value="">Selecione um aluno</option>
+                                    {% for aluno in alunos %}
+                                    <option value="{{ aluno.matricula }}" {% if aluno.matricula == aluno_selecionado %}selected{% endif %}>
+                                        {{ aluno.nome }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Botões de Relatório Contextuais -->
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        {% if escola_selecionada %}
+                        <a href="{{ url_for('gerar_pdf_escola_turma_fundamental') }}?{{ 'turma_id=' ~ turma_selecionada if turma_selecionada else 'escola_id=' ~ escola_selecionada }}" 
+                           class="btn btn-success" target="_blank">
+                            <i class="bi bi-file-earmark-text me-1"></i>Relatório {{ turma_selecionada and "da Turma" or "da Escola" }}
+                        </a>
+                        {% endif %}
+                        
+                        {% if aluno_selecionado %}
+                        <a href="{{ url_for('gerar_relatorio_fundamental', tipo='aluno', id=aluno_selecionado) }}" 
+                           class="btn btn-primary" target="_blank">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>Relatório Individual
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Relatórios Consolidados -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-collection me-2"></i>Relatórios Consolidados</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Relatório Geral da Rede</h6>
+                        <p class="small text-muted mb-2">Consolidado de todas as escolas do fundamental</p>
+                        <a href="{{ url_for('gerar_pdf_todas_escolas_fundamental') }}" 
+                           class="btn btn-outline-info w-100" target="_blank">
+                            <i class="bi bi-file-earmark-bar-graph me-1"></i>Gerar Relatório Geral
+                        </a>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <div class="alert alert-light border small mb-0">
+                            <i class="bi bi-info-circle me-1"></i> Selecione uma escola ou turma para habilitar relatórios específicos.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO DE RESUMO DINÂMICO -->
+    {% if resumo %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 border-start border-primary border-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">
+                            <span class="badge bg-primary me-2">{{ resumo.tipo }}</span>
+                            {{ resumo.nome }}
+                        </h4>
+                        <div class="text-end">
+                            <span class="text-muted small">Média Geral de Desempenho</span>
+                            <h3 class="mb-0 text-primary">{{ "%.1f"|format(resumo.media_geral) }} <small class="text-muted" style="font-size: 0.5em;">/ 5.0</small></h3>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        {% if resumo.tipo == 'Escola' %}
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm text-center">
+                                <i class="bi bi-door-open fs-3 text-primary mb-2"></i>
+                                <h6 class="text-muted mb-1">Turmas</h6>
+                                <h4 class="mb-0">{{ resumo.total_turmas }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm text-center">
+                                <i class="bi bi-people fs-3 text-primary mb-2"></i>
+                                <h6 class="text-muted mb-1">Total Alunos</h6>
+                                <h4 class="mb-0">{{ resumo.total_alunos }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm text-center">
+                                <i class="bi bi-check2-circle fs-3 text-success mb-2"></i>
+                                <h6 class="text-muted mb-1">Avaliados</h6>
+                                <h4 class="mb-0">{{ resumo.alunos_avaliados }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm text-center">
+                                <i class="bi bi-graph-up fs-3 text-info mb-2"></i>
+                                <h6 class="text-muted mb-1">Progresso</h6>
+                                <h4 class="mb-0">{{ resumo.progresso }}%</h4>
+                            </div>
+                        </div>
+                        
+                        {% elif resumo.tipo == 'Turma' %}
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded shadow-sm">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-building me-3 fs-3 text-primary"></i>
+                                    <div>
+                                        <h6 class="text-muted mb-0">Escola</h6>
+                                        <p class="fw-bold mb-0">{{ resumo.escola }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded shadow-sm">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-people me-3 fs-3 text-primary"></i>
+                                    <div>
+                                        <h6 class="text-muted mb-0">Alunos (Avaliados/Total)</h6>
+                                        <p class="fw-bold mb-0">{{ resumo.alunos_avaliados }} / {{ resumo.total_alunos }} ({{ resumo.progresso }}%)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded shadow-sm">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-calendar-event me-3 fs-3 text-primary"></i>
+                                    <div>
+                                        <h6 class="text-muted mb-0">Série</h6>
+                                        <p class="fw-bold mb-0">{{ resumo.serie }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% elif resumo.tipo == 'Aluno' %}
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm">
+                                <h6 class="text-muted mb-1">Matrícula</h6>
+                                <p class="fw-bold mb-0">{{ resumo.matricula }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm">
+                                <h6 class="text-muted mb-1">Turma / Série</h6>
+                                <p class="fw-bold mb-0">{{ resumo.turma }} ({{ resumo.serie }})</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm">
+                                <h6 class="text-muted mb-1">Escola</h6>
+                                <p class="fw-bold mb-0">{{ resumo.escola }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded shadow-sm">
+                                <h6 class="text-muted mb-1">Total de Avaliações</h6>
+                                <p class="fw-bold mb-0">{{ resumo.total_avaliacoes }} registros</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Gráfico Radar Aprimorado -->
+    {% if dados_grafico %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-radar me-2"></i>Desempenho por Disciplina</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown">
+                            <i class="bi bi-download me-1"></i> Exportar Gráfico
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportRadarAsPNG()">PNG</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportRadarAsPDF()">PDF</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-lg-7">
+                            <div class="chart-container" style="position: relative; height: 400px;">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Disciplina</th>
+                                            <th class="text-center">Média</th>
+                                            <th class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for dado in dados_grafico %}
+                                        <tr>
+                                            <td class="small fw-bold">{{ dado.disciplina }}</td>
+                                            <td class="text-center fw-bold text-primary">{{ "%.1f"|format(dado.media) }}</td>
+                                            <td class="text-center">
+                                                {% if dado.media < 2 %}
+                                                    <span class="badge bg-danger">Crítico</span>
+                                                {% elif dado.media < 3.5 %}
+                                                    <span class="badge bg-warning text-dark">Em Desenv.</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Adequado</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-light border small mt-2">
+                                <strong>Legenda:</strong> As médias representam o estágio de desenvolvimento (1 a 5) alcançado nas habilidades de cada disciplina.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Avaliações Detalhadas (Apenas para Aluno) -->
+    {% if avaliacoes %}
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Histórico de Habilidades</h5>
+            <span class="badge bg-primary rounded-pill">{{ avaliacoes|length }} registros</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Disciplina</th>
+                            <th>Unidade Temática</th>
+                            <th>Habilidade</th>
+                            <th class="text-center">Estágio</th>
+                            <th>Avaliador</th>
+                            <th class="text-center">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for av in avaliacoes %}
+                        <tr>
+                            <td><small class="fw-bold">{{ av.disciplina }}</small></td>
+                            <td><small>{{ av.unidade_tematica }}</small></td>
+                            <td><small>{{ av.habilidade|truncate(60) }}</small></td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ 'danger' if av.estagio == 1 else 'warning' if av.estagio == 2 else 'info' if av.estagio == 3 else 'primary' if av.estagio == 4 else 'success' }} rounded-pill">
+                                    {{ av.estagio }}
+                                </span>
+                            </td>
+                            <td><small>{{ av.avaliador }}</small></td>
+                            <td class="text-center small">{{ av.data_avaliacao.strftime('%d/%m/%Y') if av.data_avaliacao else '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% elif aluno_selecionado %}
+    <div class="alert alert-warning shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Nenhuma avaliação de habilidade encontrada para este aluno.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('radarChart');
+    {% if dados_grafico %}
+    const labels = {{ dados_grafico|map(attribute='disciplina')|list|tojson }};
+    const dataValues = {{ dados_grafico|map(attribute='media')|list|tojson }};
+    
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Média de Desempenho',
+                    data: dataValues,
+                    backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                    borderColor: 'rgba(13, 110, 253, 0.8)',
+                    borderWidth: 3,
+                    pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        min: 0,
+                        max: 5,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+    {% endif %}
+});
+
+function exportRadarAsPNG() {
+    const canvas = document.getElementById('radarChart');
+    const link = document.createElement('a');
+    link.download = 'radar-desempenho-fundamental.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+function exportRadarAsPDF() {
+    const { jsPDF } = window.jspdf;
+    const canvas = document.getElementById('radarChart');
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('l', 'mm', 'a4');
+    pdf.text('Relatório de Desempenho - Ensino Fundamental', 10, 10);
+    pdf.addImage(imgData, 'PNG', 10, 20, 200, 150);
+    pdf.save('relatorio-radar-fundamental.pdf');
+}
+</script>
+
+<style>
+    .card { border-radius: 12px; }
+    .chart-container { background: #fcfcfc; border-radius: 8px; }
+    .badge { padding: 0.5em 0.8em; }
+    .table th { font-size: 0.75rem; text-transform: uppercase; color: #6c757d; }
+</style>
+{% endblock %}

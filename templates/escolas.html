@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Escolas - Sistema de Avaliação{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 100px;">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-building me-2"></i>
+                Escolas Disponíveis
+            </h4>
+        </div>
+        
+        <div class="card-body">
+            {% if escolas|length == 0 %}
+                <div class="alert alert-warning">
+                    Nenhuma escola encontrada.
+                </div>
+            {% else %}
+                <div class="row">
+                    {% for escola in escolas %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="bi bi-building me-2"></i>{{ escola.nome }}
+                                </h5>
+                                
+                                {% if session.admin %}
+                                    <a href="{{ url_for('detalhes_escola', escola_id=escola.id) }}" 
+                                       class="btn btn-outline-primary btn-sm me-2">
+                                        <i class="bi bi-eye me-1"></i> Detalhes
+                                    </a>
+                                    <a href="{{ url_for('listar_turmas', escola_id=escola.id) }}" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="bi bi-people me-1"></i> Ver Turmas
+                                    </a>
+                                {% else %}
+                                    <form method="POST" action="{{ url_for('listar_escolas') }}" class="d-inline">
+                                        <input type="hidden" name="escola_id" value="{{ escola.id }}">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-people me-1"></i> Ver Turmas
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        {% if session.admin %}
+        <div class="card-footer bg-light">
+            <a href="{{ url_for('painel_admin') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Voltar ao Painel
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

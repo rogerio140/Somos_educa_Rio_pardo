@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">Selecione seu Segmento</h2>
+            <p class="small text-muted mb-0">Escola: {{ escola_nome }}</p>
+        </div>
+        
+        <div class="card-body">
+            <form method="POST">
+                <div class="list-group mb-3">
+                    {% for segmento in segmentos %}
+                    <label class="list-group-item list-group-item-action">
+                        <input type="radio" name="segmento_id" value="{{ segmento.id }}" required>
+                        {{ segmento.nome }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">Continuar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

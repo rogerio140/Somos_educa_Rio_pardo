@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Avaliação de {{ aluno_nome }} - {{ bloco.campo }}</h2>
+
+<form method="post">
+    {% for direito in bloco.direitos %}
+    <div class="bloco-direito">
+        <h3>{{ direito.direito }}</h3>
+        {% for estagio in direito.estagios %}
+        <label>
+            <input type="radio" name="direito_{{ direito.id }}" 
+                   value="{{ estagio.numero }}"
+                   {% if respostas.get(direito.id|string) == estagio.numero %}checked{% endif %}>
+            {{ estagio.descricao }}
+        </label><br>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <div class="navegacao">
+        {% if current_bloco > 0 %}
+        <a href="{{ url_for('exibir_bloco', aluno_matricula=aluno_matricula, bloco_index=current_bloco-1) }}">
+            Anterior
+        </a>
+        {% endif %}
+
+        <button type="submit" name="proximo">
+            {% if current_bloco == total_blocos - 1 %}Finalizar{% else %}Próximo Bloco{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}

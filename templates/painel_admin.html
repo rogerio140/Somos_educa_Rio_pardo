@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header with Logout Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-speedometer2 me-2"></i>Painel Administrativo</h1>
+        </div>
+        <div>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                <i class="bi bi-box-arrow-left"></i> Sair
+            </a>
+        </div>
+    </div>
+
+    <!-- Last Update Time -->
+    <div class="text-end mb-4">
+        <div class="bg-light p-2 rounded d-inline-block">
+            <small class="text-muted">Última atualização: {{ now.strftime('%d/%m/%Y %H:%M') }}</small>
+        </div>
+    </div>
+    
+    <!-- General Progress -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Progresso Geral</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3>{{ total_escolas }}</h3>
+                            <p class="mb-0">Escolas Cadastradas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3>{{ total_alunos }}</h3>
+                            <p class="mb-0">Total de Alunos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3>{{ alunos_avaliados }}</h3>
+                            <p class="mb-0">Alunos Avaliados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3>{{ progresso_geral }}%</h3>
+                            <p class="mb-0">Progresso Total</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+    
+         <!-- Segment Filter -->
+        <!-- Segment Filter Harmonizado -->
+   
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Visualizar Segmento</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{{ url_for('painel_admin') }}" class="row g-3 align-items-end">
+                <div class="col-md-6 col-lg-4">
+                    <label for="segmento_id" class="form-label">Escolha o segmento para gerar o relatório:</label>
+                    <select class="form-select" id="segmento_id" name="segmento_id"
+                            onchange="if(this.value==1) window.location='{{ url_for('painel_infantil') }}'; 
+                                    else if(this.value==2) window.location='{{ url_for('painel_fundamental') }}'; 
+                                    else window.location='{{ url_for('painel_admin') }}';">
+                        <option value="">Todos os Segmentos</option>
+                        <option value="1" {% if segmento_selecionado == 1 %}selected{% endif %}>
+                            Ensino Infantil
+                        </option>
+                        <option value="2" {% if segmento_selecionado == 2 %}selected{% endif %}>
+                            Ensino Fundamental
+                        </option>
+                    </select>
+                </div>
+                {% if segmento_selecionado %}
+                <div class="col-md-2">
+                    <a href="{{ url_for('painel_admin') }}" class="btn btn-outline-secondary mt-4">
+                        Limpar
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+ 
+
+
+
+
+
+
+
+
+    <!-- Schools List -->
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Processo das Escolas</h5>
+            <small class="text-muted">Total: {{ escolas|length }}</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                {% for escola in escolas %}
+                <a href="{{ url_for('detalhes_escola', escola_id=escola.id) }}" 
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">{{ escola.nome }}</h5>
+                            <small class="text-muted">ID: {{ escola.id }} | {{ escola.total_turmas }} turmas</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar 
+                                    {% if escola.total_alunos > 0 and escola.alunos_avaliados == escola.total_alunos %}bg-success
+                                    {% elif escola.alunos_avaliados > 0 %}bg-primary
+                                    {% else %}bg-secondary{% endif %}" 
+                                    role="progressbar" 
+                                    style="width: {{ (escola.alunos_avaliados/escola.total_alunos*100 if escola.total_alunos > 0 else 0)|round(1) }}%">
+                                    {{ escola.alunos_avaliados }}/{{ escola.total_alunos }} alunos
+                                </div>
+                            </div>
+                            <span class="badge 
+                                {% if escola.total_alunos > 0 and escola.alunos_avaliados == escola.total_alunos %}bg-success
+                                {% elif escola.alunos_avaliados > 0 %}bg-primary
+                                {% else %}bg-secondary{% endif %}">
+                                {{ (escola.alunos_avaliados/escola.total_alunos*100 if escola.total_alunos > 0 else 0)|round(1) }}%
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+
+
+
+
+   
+
+
+
+
+
+
+</div>
+
+<style>
+    .btn-outline-danger:hover {
+        color: white !important;
+        background-color: #dc3545;
+    }
+    .progress-bar {
+        transition: width 0.6s ease;
+    }
+    .list-group-item-action:hover {
+        background-color: #f8f9fa;
+    }
+    .progress {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+     /* Adicione ao final do seu CSS existente */
+    .badge.rounded-pill {
+        min-width: 30px;
+        display: inline-block;
+        text-align: center;
+    }
+    .table th {
+        white-space: nowrap;
+    }
+    .alert {
+        border-left: 4px solid;
+    }
+</style>
+{% endblock %}

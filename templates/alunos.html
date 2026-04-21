@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Alunos - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Alunos da Turma</h2>
+        <a href="{{ url_for('listar_turmas') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar para Turmas
+        </a>
+    </div>
+    
+    <div class="alert alert-info d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <div>
+            Total de alunos: {{ total_alunos }} - 
+            Avaliados: {{ alunos|selectattr('2')|list|length }} - 
+            Pendentes: {{ total_alunos - (alunos|selectattr('2')|list|length) }}
+        </div>
+    </div>
+    
+    <div class="list-group">
+        {% for aluno in alunos %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div class="d-flex flex-column">
+                <h5 class="mb-1">
+                    {{ aluno[1] }}
+                    {% if aluno[2] %}
+                    <span class="badge bg-success ms-2">
+                        <i class="bi bi-check-circle-fill"></i> Avaliado
+                    </span>
+                    {% endif %}
+                </h5>
+                <small class="text-muted">Matrícula: {{ aluno[0] }}</small>
+            </div>
+            <div class="btn-group" role="group">
+                {% if aluno[2] %}
+                <button class="btn btn-outline-secondary" disabled>
+                    <i class="bi bi-pencil-square"></i> Avaliado
+                </button>
+                {% else %}
+                <a href="{{ url_for('avaliar_aluno', aluno_matricula=aluno[0]) }}" 
+                   class="btn btn-primary">
+                   <i class="bi bi-pencil-square"></i> Avaliar
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

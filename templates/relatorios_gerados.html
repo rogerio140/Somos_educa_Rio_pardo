@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios Gerados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title">Relatórios Gerados Automaticamente</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h4 class="alert-heading">Sucesso!</h4>
+                    <p>Foram gerados <strong>{{ total_gerados }}</strong> relatórios para o segmento <strong>{{ segmento }}</strong>.</p>
+                    <hr>
+                    <p class="mb-0">Os relatórios foram salvos na pasta <code>relatorios_auto</code> no servidor, organizados por escola e turma.</p>
+                </div>
+                
+                <h4 class="mt-4">Relatórios Gerados:</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Nome</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for relatorio in relatorios_gerados %}
+                            <tr>
+                                <td>{{ relatorio.split(':')[0] }}</td>
+                                <td>{{ relatorio.split(':')[1] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('painel_admin') }}" class="btn btn-primary">
+                        Voltar ao Painel Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

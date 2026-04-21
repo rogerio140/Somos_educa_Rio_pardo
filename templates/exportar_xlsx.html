@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Exportar Dados para Excel</h2>
+    
+    <!-- Mensagens de feedback -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('exportar_xlsx') }}" class="border p-4 rounded bg-light">
+        <div class="form-group">
+            <label for="segmento_id" class="font-weight-bold">Segmento:</label>
+            <select class="form-control" id="segmento_id" name="segmento_id" required>
+                <option value="">Selecione um segmento</option>
+                {% if segmentos %}
+                    {% for segmento in segmentos %}
+                        <option value="{{ segmento[0] }}" {% if segmento[0] == segmento_selecionado %}selected{% endif %}>
+                            {{ segmento[1] }}
+                        </option>
+                    {% endfor %}
+                {% else %}
+                    <option value="">Nenhum segmento disponível</option>
+                {% endif %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="escola_id" class="font-weight-bold">Escola:</label>
+            <select class="form-control" id="escola_id" name="escola_id">
+                <option value="all">Todas as escolas</option>
+                {% if escolas %}
+                    {% for escola in escolas %}
+                        <option value="{{ escola.id }}">{{ escola.nome }}</option>
+                    {% endfor %}
+                {% else %}
+                    <option value="">Nenhuma escola disponível</option>
+                {% endif %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-block mt-4">
+            <i class="fas fa-file-excel mr-2"></i> Exportar para Excel
+        </button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const segmentoSelect = document.getElementById('segmento_id');
+        const escolaSelect = document.getElementById('escola_id');
+
+        segmentoSelect.addEventListener('change', function () {
+            const segmentoId = this.value;
+            escolaSelect.innerHTML = '<option>Carregando...</option>';
+
+            fetch(`/api/escolas_por_segmento/${segmentoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    escolaSelect.innerHTML = '';
+                    if (data.status === 'success') {
+                        escolaSelect.innerHTML = '<option value="all">Todas</option>';
+                        data.escolas.forEach(escola => {
+                            const option = document.createElement('option');
+                            option.value = escola.id;
+                            option.textContent = escola.nome;
+                            escolaSelect.appendChild(option);
+                        });
+                    } else {
+                        escolaSelect.innerHTML = '<option>Nenhuma escola encontrada</option>';
+                    }
+                })
+                .catch(err => {
+                    escolaSelect.innerHTML = '<option>Erro ao carregar escolas</option>';
+                });
+        });
+    });
+</script>
+
+{% endblock %}
