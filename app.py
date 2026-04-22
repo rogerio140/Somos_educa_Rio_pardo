@@ -2204,7 +2204,7 @@ def gerar_pdf_escola_turma():
                 if verbo_destaque and not is_primeira_escrita:
                     direito_destaque = direitos_por_verbo.get(verbo_destaque, '')
                     story.append(Paragraph(
-                        f"<font color='#003366'><b>Em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
+                        f"<font color='#003366'><b>Direito em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
                         f"{max_concentracao:.1%} </b></font>", 
                         estilo_normal
                     ))
@@ -4152,7 +4152,7 @@ def gerar_pdf_por_ano_serie():
             if verbo_destaque and not is_primeira_escrita:
                 direito_destaque = direitos_por_verbo.get(verbo_destaque, '')
                 story.append(Paragraph(
-                    f"<font color='#003366'><b>Em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
+                    f"<font color='#003366'><b>Direito em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
                     f"{max_concentracao:.1%} dos alunos nos estágios iniciais</b></font>", 
                     estilo_normal
                 ))
@@ -4631,7 +4631,7 @@ def gerar_pdf_todas_escolas_infantil():
                 if verbo_destaque and not is_primeira_escrita:
                     direito_destaque = direitos_por_verbo.get(verbo_destaque, '')
                     story.append(Paragraph(
-                        f"<font color='#003366'><b>Em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
+                        f"<font color='#003366'><b>Direito em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
                         f"{max_concentracao:.1%} dos alunos nos estágios iniciais</b></font>", 
                         estilo_normal
                     ))
