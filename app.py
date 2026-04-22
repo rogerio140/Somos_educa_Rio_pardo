@@ -2020,7 +2020,7 @@ def gerar_pdf_escola_turma():
                 
                 # Adicionar legenda sobre o destaque
                 story.append(Paragraph(
-                    "<i>Nota: Será destacado em amarelo o direito com maior necessidade de atenção (maior concentração nos estágios iniciais)</i>", 
+                    "<i>Nota: Será destacado em amarelo o direito em desenvovimento (maior concentração nos estágios iniciais)</i>", 
                     styles['Italic']
                 ))
                 story.append(Spacer(1, 15))
@@ -2204,7 +2204,7 @@ def gerar_pdf_escola_turma():
                 if verbo_destaque and not is_primeira_escrita:
                     direito_destaque = direitos_por_verbo.get(verbo_destaque, '')
                     story.append(Paragraph(
-                        f"<font color='#003366'><b>Maior necessidade de atenção: {verbo_destaque} ({direito_destaque}) - " +
+                        f"<font color='#003366'><b>Em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
                         f"{max_concentracao:.1%} </b></font>", 
                         estilo_normal
                     ))
@@ -3990,7 +3990,7 @@ def gerar_pdf_por_ano_serie():
             
             # Adicionar legenda sobre o destaque
             story.append(Paragraph(
-                "<i>Nota: Será destacado em amarelo o direito com maior necessidade de atenção (maior concentração nos estágios iniciais)</i>", 
+                "<i>Nota: Será destacado em amarelo o direito com maior em desenvovimento (maior concentração nos estágios iniciais)</i>", 
                 styles['Italic']
             ))
             story.append(Spacer(1, 15))
@@ -4152,7 +4152,7 @@ def gerar_pdf_por_ano_serie():
             if verbo_destaque and not is_primeira_escrita:
                 direito_destaque = direitos_por_verbo.get(verbo_destaque, '')
                 story.append(Paragraph(
-                    f"<font color='#003366'><b>Maior necessidade de atenção: {verbo_destaque} ({direito_destaque}) - " +
+                    f"<font color='#003366'><b>Em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
                     f"{max_concentracao:.1%} dos alunos nos estágios iniciais</b></font>", 
                     estilo_normal
                 ))
@@ -4469,7 +4469,7 @@ def gerar_pdf_todas_escolas_infantil():
             
             # Adicionar legenda sobre o destaque
             story.append(Paragraph(
-                "<i>Nota: Será destacado em amarelo o direito com maior necessidade de atenção (maior concentração nos estágios iniciais)</i>", 
+                "<i>Nota: Será destacado em amarelo o direito em desenvovimento (maior concentração nos estágios iniciais)</i>", 
                 styles['Italic']
             ))
             story.append(Spacer(1, 15))
@@ -4631,7 +4631,7 @@ def gerar_pdf_todas_escolas_infantil():
                 if verbo_destaque and not is_primeira_escrita:
                     direito_destaque = direitos_por_verbo.get(verbo_destaque, '')
                     story.append(Paragraph(
-                        f"<font color='#003366'><b>Maior necessidade de atenção: {verbo_destaque} ({direito_destaque}) - " +
+                        f"<font color='#003366'><b>Em desenvovimento: {verbo_destaque} ({direito_destaque}) - " +
                         f"{max_concentracao:.1%} dos alunos nos estágios iniciais</b></font>", 
                         estilo_normal
                     ))
@@ -5071,7 +5071,7 @@ def gerar_pdf_todas_escolas_fundamental():
             
             # Adicionar legenda sobre o destaque
             story.append(Paragraph(
-                "<i>Nota: Será destacado em amarelo a habilidade com maior necessidade de atenção (maior concentração nos estágios iniciais)</i>", 
+                "<i>Nota: Será destacado em amarelo a habilidade em desenvovimento (maior concentração nos estágios iniciais)</i>", 
                 styles['Italic']
             ))
             story.append(Spacer(1, 15))
