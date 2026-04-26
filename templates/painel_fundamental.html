@@ -140,7 +140,7 @@
                             {{ resumo.nome }}
                         </h4>
                         <div class="text-end">
-                            <span class="text-muted small">Média Geral de Desempenho</span>
+                            <span class="text-muted small">Média Geral do Acompanhamento</span>
                             <h3 class="mb-0 text-primary">{{ "%.1f"|format(resumo.media_geral) }} <small class="text-muted" style="font-size: 0.5em;">/ 5.0</small></h3>
                         </div>
                     </div>
@@ -250,16 +250,8 @@
         <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-radar me-2"></i>Desempenho por Disciplina</h5>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown">
-                            <i class="bi bi-download me-1"></i> Exportar Gráfico
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="exportRadarAsPNG()">PNG</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportRadarAsPDF()">PDF</a></li>
-                        </ul>
-                    </div>
+                    <h5 class="mb-0"><i class="bi bi-radar me-2"></i>Acompanhamento por Disciplina</h5>
+                    
                 </div>
                 <div class="card-body">
                     <div class="row align-items-center">
@@ -285,11 +277,11 @@
                                             <td class="text-center fw-bold text-primary">{{ "%.1f"|format(dado.media) }}</td>
                                             <td class="text-center">
                                                 {% if dado.media < 2 %}
-                                                    <span class="badge bg-danger">Crítico</span>
+                                                    <span class="badge bg-secondary">Inicial</span>
                                                 {% elif dado.media < 3.5 %}
                                                     <span class="badge bg-warning text-dark">Em Desenv.</span>
                                                 {% else %}
-                                                    <span class="badge bg-success">Adequado</span>
+                                                    <span class="badge bg-success">Consolidado</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -373,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Média de Desempenho',
+                    label: 'Média do Acompanhamento',
                     data: dataValues,
                     backgroundColor: 'rgba(13, 110, 253, 0.2)',
                     borderColor: 'rgba(13, 110, 253, 0.8)',

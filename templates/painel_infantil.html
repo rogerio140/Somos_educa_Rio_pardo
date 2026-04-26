@@ -261,16 +261,8 @@
         <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-radar me-2"></i>Análise por Campo de Experiência</h5>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown">
-                            <i class="bi bi-download me-1"></i> Exportar Gráfico
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="exportRadarAsPNG()">PNG</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportRadarAsPDF()">PDF</a></li>
-                        </ul>
-                    </div>
+                    <h5 class="mb-0"><i class="bi bi-radar me-2"></i>Acompanhamento por Campo de Experiência</h5>
+                    
                 </div>
                 <div class="card-body">
                     <div class="row align-items-center">
@@ -298,11 +290,11 @@
                                                 {% set status_max = 8 if "Primeira Escrita" in dado.campo else 5 %}
                                                 {% set perc = (dado.media / status_max) * 100 %}
                                                 {% if perc < 40 %}
-                                                    <span class="badge bg-danger">Crítico</span>
+                                                    <span class="badge bg-secondary">Inicial</span>
                                                 {% elif perc < 70 %}
                                                     <span class="badge bg-warning text-dark">Em Desenv.</span>
                                                 {% else %}
-                                                    <span class="badge bg-success">Adequado</span>
+                                                    <span class="badge bg-success">Consolidado</span>
                                                 {% endif %}
                                             </td>
                                         </tr>

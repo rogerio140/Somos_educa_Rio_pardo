@@ -322,12 +322,33 @@ def logout():
 @app.route('/admin')
 @admin_required
 def painel_admin():
-    segmento_id = request.args.get('segmento_id', type=int)  # Novo parâmetro para filtrar
+    segmento_id = request.args.get('segmento_id', type=int)
     
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            # Consulta modificada para incluir filtro por segmento
+            # PRIMEIRO: Verificar quais segmentos têm turmas cadastradas
+            cur.execute("""
+                SELECT DISTINCT s.id, s.nome 
+                FROM segmentos s
+                INNER JOIN turmas t ON s.id = t.segmento_id
+                ORDER BY s.id
+            """)
+            segmentos_existentes = cur.fetchall()
+            
+            # Criar lista de segmentos disponíveis
+            segmentos_disponiveis = []
+            
+            for seg_id, seg_nome in segmentos_existentes:
+                segmentos_disponiveis.append({'id': seg_id, 'nome': seg_nome})
+            
+            # Se não houver nenhum segmento, mostrar todos (fallback)
+            if not segmentos_disponiveis:
+                cur.execute("SELECT id, nome FROM segmentos ORDER BY id")
+                segmentos_disponiveis = [{'id': row[0], 'nome': row[1]} for row in cur.fetchall()]
+            
+            # SEGUNDO: Construir query base para escolas
+            # CORREÇÃO: Usar t.segmento_id em vez de ans.segmento_id
             query = """
                 SELECT 
                     e.id,
@@ -342,15 +363,18 @@ def painel_admin():
                 FROM escolas e
                 LEFT JOIN turmas t ON e.id = t.escola_id
                 LEFT JOIN alunos al ON t.id = al.turma_id
-                LEFT JOIN ano_series ans ON t.ano_serie_id = ans.id
                 WHERE 1=1
             """
             
             params = []
             
-            if segmento_id:
-                query += " AND ans.segmento_id = %s"
+            # Se um segmento foi selecionado E ele existe, adiciona filtro
+            if segmento_id and segmento_id in [s['id'] for s in segmentos_disponiveis]:
+                query += " AND t.segmento_id = %s"  # CORREÇÃO: usar t.segmento_id
                 params.append(segmento_id)
+            elif segmento_id and segmento_id not in [s['id'] for s in segmentos_disponiveis]:
+                # Segmento selecionado não existe - ignorar filtro
+                segmento_id = None
             
             query += " GROUP BY e.id ORDER BY e.nome"
             
@@ -375,10 +399,6 @@ def painel_admin():
             total_escolas = len(escolas)
             progresso_geral = (alunos_avaliados_geral / total_alunos_geral * 100) if total_alunos_geral > 0 else 0
             
-            # Buscar segmentos para o dropdown
-            cur.execute("SELECT id, nome FROM segmentos ORDER BY id")
-            segmentos = [{'id': row[0], 'nome': row[1]} for row in cur.fetchall()]
-            
         return render_template('painel_admin.html',
                             escolas=escolas,
                             total_escolas=total_escolas,
@@ -386,13 +406,10 @@ def painel_admin():
                             alunos_avaliados=alunos_avaliados_geral,
                             progresso_geral=round(progresso_geral, 1),
                             now=get_brazil_time(),
-                            segmentos=segmentos,  # Novo parâmetro
-                            segmento_selecionado=segmento_id)  # Novo parâmetro
+                            segmentos=segmentos_disponiveis,
+                            segmento_selecionado=segmento_id)
     finally:
         conn.close()
-
-
-
 
 
 
@@ -1463,8 +1480,8 @@ def gerar_pdf_infantil(aluno_matricula):
         estilo_destaque.textColor = colors.HexColor("#000000")
         
         # CABEÇALHO COM LOGOS
-        logo_somos = 'static/logo_somos.png'  # Ajuste o caminho conforme necessário
-        logo_pref = 'static/prefeitura_sj.png'  # Ajuste o caminho conforme necessário
+        logo_somos = 'static/logo_somos.png'
+        logo_pref = 'static/prefeitura_sj.png'
         
         # Tabela com 3 colunas para o cabeçalho (logo esquerda, título, logo direita)
         cabecalho_tabela = Table([
@@ -1494,7 +1511,6 @@ def gerar_pdf_infantil(aluno_matricula):
                     pass
             return Paragraph(text, style)
         
-        #story.append(safe_paragraph("<b>Acompanhamento do Desenvolvimento da Aprendizagem - ENSINO INFANTIL</b>", estilo_titulo))
         story.append(Spacer(1, 15))
         
         # Informações do aluno
@@ -1609,10 +1625,10 @@ def gerar_pdf_infantil(aluno_matricula):
                     ax.text(bar.get_x() + bar.get_width()/2., height,
                             f'{height:.1f}', ha='center', va='bottom')
                 
-                # Legenda
+                # INVERTER A LEGENDA - "Maior atenção necessária" em primeiro lugar
                 legend_elements = [
-                    Patch(facecolor='#36a2eb', label='Direitos'),
-                    Patch(facecolor='#ff6b6b', label='Maior atenção necessária')
+                    Patch(facecolor='#ff6b6b', label='Maior atenção necessária'),
+                    Patch(facecolor='#36a2eb', label='Direitos')
                 ]
                 ax.legend(handles=legend_elements, loc='upper right')
                 plt.tight_layout()
@@ -1631,13 +1647,11 @@ def gerar_pdf_infantil(aluno_matricula):
                 img.drawWidth = min(500, img.drawHeight * (1.0 * img.imageWidth / img.imageHeight))
                 story.append(img)
                 story.append(Spacer(1, 15))
-
-                
                 
                 # Cabeçalhos da tabela
                 tabela_dados = [["Verbo", "Estágio"]]
                 
-                # Adicionar dados à tabela
+                # Adicionar dados à tabela (ordenar por estágio do menor para o maior - os que precisam atenção primeiro)
                 for direito in sorted(direitos, key=lambda x: x['estagio_numero']):
                     tabela_dados.append([
                         direito['verbo'],
@@ -1647,8 +1661,8 @@ def gerar_pdf_infantil(aluno_matricula):
                 # Ajustar larguras das colunas
                 col_widths = [80, 50, 120, 70, 100]
                 if is_primeira_escrita:
-                    col_widths[1] = 60  # Mais espaço para o estágio
-                    col_widths[2] = 60  # Mais espaço para descrição mais longa
+                    col_widths[1] = 60
+                    col_widths[2] = 60
                 
                 # Criar tabela
                 tabela = Table(tabela_dados, colWidths=col_widths)
@@ -1682,7 +1696,7 @@ def gerar_pdf_infantil(aluno_matricula):
                 # Adicionar observação sobre TODOS os direitos destacados
                 if direitos_destaque:
                     story.append(Spacer(1, 10))
-                    obs_titulo = safe_paragraph("<font color='#d63900'><b>Direitos que requerem atenção:</b></font>", estilo_normal)
+                    obs_titulo = safe_paragraph("<font color='#d63900'><b>Direitos em desenvolvimento:</b></font>", estilo_normal)
                     story.append(obs_titulo)
                     
                     for direito in direitos_destaque:
@@ -1695,17 +1709,9 @@ def gerar_pdf_infantil(aluno_matricula):
                 
                 story.append(Spacer(1, 20))
                 
-                
-
                 # Quebra de página ANTES do próximo campo (exceto no último)
-                if campo != campos[-1]:
-                    story.append(PageBreak())  # <-- Nova página para o próximo campo
-
-
-        # Rodapé
-        #data_emissao = datetime.now().strftime("%d/%m/%Y ")
-        #rodape = safe_paragraph(f"<i>Relatório gerado em {data_emissao} - Sistema de Avaliação</i>", styles['Italic'])
-        #story.append(rodape)
+                if campo != list(dados_por_campo.keys())[-1]:
+                    story.append(PageBreak())
 
         # Gerar PDF
         doc.build(story)
@@ -1724,7 +1730,6 @@ def gerar_pdf_infantil(aluno_matricula):
     finally:
         if 'conn' in locals():
             conn.close()
-
 
 
 @app.route('/gerar-pdf-escola-turma')
@@ -1817,8 +1822,6 @@ def gerar_pdf_escola_turma():
         if subtitulo:
             story.append(Paragraph(subtitulo, estilo_normal))
         story.append(Spacer(1, 20))
-
-        
 
         # Dados estatísticos gerais
         if turma_id:
@@ -2025,9 +2028,9 @@ def gerar_pdf_escola_turma():
                 ))
                 story.append(Spacer(1, 15))
                 story.append(PageBreak())
+            
             for i, campo in enumerate(campos):
                 is_primeira_escrita = campo == "Primeira Escrita"
-                
                 
                 # Título do Campo
                 story.append(Paragraph(f"<b>CAMPO DE EXPERIÊNCIA: {campo}</b>", estilo_titulo))
@@ -2192,7 +2195,21 @@ def gerar_pdf_escola_turma():
                 
                 ax.set_ylabel('Porcentagem de Alunos')
                 ax.set_title(f'Distribuição por Estágio - {campo}')
-                ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
+                
+                # INVERTER A LEGENDA - Estágio mais alto para o mais baixo
+                if is_primeira_escrita:
+                    # Para Primeira Escrita (estágios 8 ao 1)
+                    legend_elements = []
+                    for i in range(len(cores)-1, -1, -1):  # Do índice 7 até 0 (estágio 8 até 1)
+                        legend_elements.append(Patch(facecolor=cores[i], label=labels_estagios[i]))
+                else:
+                    # Para campos normais (estágios 5 ao 1)
+                    legend_elements = []
+                    for i in range(4, -1, -1):  # Do índice 4 até 0 (estágio 5 até 1)
+                        legend_elements.append(Patch(facecolor=cores[i], label=labels_estagios[i]))
+                
+                ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1))
+                
                 plt.xticks(rotation=45, ha='right')
                 plt.tight_layout()
                 
@@ -2257,17 +2274,7 @@ def gerar_pdf_escola_turma():
                 tabela.setStyle(TableStyle(estilo))
                 story.append(tabela)
                 story.append(PageBreak())
-                
-            # Quebra de página ANTES do próximo campo (exceto no último)
-            #if i < len(campos) - 1:
-             #       story.append(PageBreak())
-                    
         
-        # Rodapé
-        data_emissao = datetime.now().strftime("%d/%m/%Y")
-        rodape = Paragraph(f"<i>Relatório gerado em {data_emissao} - Sistema de Avaliação</i>", styles['Italic'])
-        #story.append(rodape)
-
         doc.build(story)
         buffer.seek(0)
 
@@ -2285,8 +2292,6 @@ def gerar_pdf_escola_turma():
     finally:
         if 'conn' in locals():
             conn.close()
-
-
 
 
 @app.route('/admin/fundamental')
@@ -2555,6 +2560,7 @@ def painel_fundamental():
 def gerar_relatorio_fundamental(tipo, id):
     try:
         
+        from matplotlib.patches import Patch
         
         conn = get_db_connection()
         cur = conn.cursor()
@@ -2889,11 +2895,12 @@ def gerar_relatorio_fundamental(tipo, id):
                         ax.text(bar.get_x() + bar.get_width()/2., height,
                                 f'{height:.1f}', ha='center', va='bottom')
                     
-                    # Legenda (apenas se houver diferença)
+                    # Legenda (apenas se houver diferença) - INVERTIDA
                     if tem_diferenca:
+                        # Criar legenda com ordem invertida
                         legend_elements = [
-                            Patch(facecolor='#1f77b4', label='Habilidades'),
-                            Patch(facecolor='#ff7f0e', label='Maior atenção necessária')
+                            Patch(facecolor='#ff7f0e', label='Em desenvolvimento'),
+                            Patch(facecolor='#1f77b4', label='Habilidades')
                         ]
                         ax.legend(handles=legend_elements, loc='upper right')
                     plt.tight_layout()
@@ -2915,7 +2922,10 @@ def gerar_relatorio_fundamental(tipo, id):
                     # Tabela com detalhes das habilidades (mostrando apenas códigos)
                     tabela_dados = [["Código", "Estágio"]]
                     
-                    for hab_cod, estagio in zip(habilidades_codigos, estagios):
+                    # Ordenar por estágio (do maior para o menor) para destacar melhor
+                    habilidades_ordenadas = sorted(zip(habilidades_codigos, estagios, habilidades_completas), key=lambda x: x[1], reverse=True)
+                    
+                    for hab_cod, estagio, hab_comp in habilidades_ordenadas:
                         tabela_dados.append([hab_cod, str(estagio)])
                     
                     # Criar tabela
@@ -2935,21 +2945,31 @@ def gerar_relatorio_fundamental(tipo, id):
                         ('FONTSIZE', (0, 1), (-1, -1), 8),
                     ]
                     
-                    # Aplica destaque apenas se houver diferença
+                    # Aplica destaque apenas se houver diferença (encontrar a linha da habilidade com menor estágio)
                     if tem_diferenca:
-                        estilo_tabela.extend([
-                            ('BACKGROUND', (0, min_estagio_idx+1), (-1, min_estagio_idx+1), '#fff3bf'),
-                            ('TEXTCOLOR', (0, min_estagio_idx+1), (-1, min_estagio_idx+1), '#d63900'),
-                            ('FONTNAME', (0, min_estagio_idx+1), (-1, min_estagio_idx+1), 'Helvetica-Bold')
-                        ])
+                        # Encontrar o índice da habilidade com menor estágio na lista ordenada
+                        for idx, (hab_cod, estagio, _) in enumerate(habilidades_ordenadas, start=1):
+                            if estagio == min_estagio:
+                                estilo_tabela.extend([
+                                    ('BACKGROUND', (0, idx), (-1, idx), '#fff3bf'),
+                                    ('TEXTCOLOR', (0, idx), (-1, idx), '#d63900'),
+                                    ('FONTNAME', (0, idx), (-1, idx), 'Helvetica-Bold')
+                                ])
+                                break
                     
                     tabela.setStyle(TableStyle(estilo_tabela))
                     story.append(tabela)
                     
                     # Adicionar observação sobre a habilidade destacada (apenas se houver diferença)
-                    if tem_diferenca and min_estagio < 3:  # Se o estágio for baixo e houver diferença
+                    if tem_diferenca and min_estagio < 3:
                         story.append(Spacer(1, 10))
-                        obs_texto = (f"<font color='#d63900'><b>Atenção:</b> A habilidade <b>'{habilidades_completas[min_estagio_idx]}'</b> "
+                        # Encontrar a descrição completa da habilidade com menor estágio
+                        hab_desc_destaque = None
+                        for hab_cod, estagio, hab_comp in habilidades_ordenadas:
+                            if estagio == min_estagio:
+                                hab_desc_destaque = hab_comp
+                                break
+                        obs_texto = (f"<font color='#d63900'><b>Atenção:</b> A habilidade <b>'{hab_desc_destaque}'</b> "
                                    f"apresenta o menor estágio ({min_estagio}) e pode requerer intervenção pedagógica.</font>")
                         story.append(safe_paragraph(obs_texto, estilo_normal))
                         story.append(Spacer(1, 10))
@@ -2964,11 +2984,6 @@ def gerar_relatorio_fundamental(tipo, id):
                 if disciplina_nome != disciplinas[-1][1]:
                     story.append(PageBreak())
         
-        # Rodapé
-        #data_emissao = datetime.now().strftime("%d/%m/%Y ")
-        #rodape = safe_paragraph(f"<i>Relatório gerado em {data_emissao} - Sistema de Avaliação</i>", styles['Italic'])
-        #story.append(rodape)
-
         # Gerar PDF
         doc.build(story)
         buffer.seek(0)
@@ -2996,7 +3011,6 @@ def gerar_relatorio_fundamental(tipo, id):
             cur.close()
         if 'conn' in locals():
             conn.close()
-
 
 
 
@@ -3497,7 +3511,7 @@ def gerar_pdf_escola_turma_fundamental():
                 
                 # Configurar eixos e título
                 ax.set_ylabel('Média dos Estágios')
-                ax.set_title(f'Média por Unidade Temática - {disciplina}')
+                ax.set_title(f'Média por Unidade Temática - {disciplina}', y=1.1)
                 plt.xticks(rotation=45, ha='right')
                 plt.ylim(0, 5)
                 plt.tight_layout()
@@ -3534,6 +3548,7 @@ def gerar_pdf_escola_turma_fundamental():
                 story.append(tabela)
                 story.append(Spacer(1, 20))
                 story.append(PageBreak())
+                
                 # Detalhamento por unidade temática
                 for i, unidade in enumerate(unidades_nomes):
                     
@@ -3660,7 +3675,14 @@ def gerar_pdf_escola_turma_fundamental():
                     # Configurações do gráfico
                     ax.set_ylabel('Porcentagem de Alunos')
                     ax.set_title(f'Distribuição por Estágio - {unidade}')
-                    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
+                    
+                    # INVERTER A LEGENDA - Estágio 5 ao 1 (de cima para baixo)
+                    legend_elements = []
+                    for i in range(4, -1, -1):  # Do índice 4 (estágio 5) até 0 (estágio 1)
+                        legend_elements.append(Patch(facecolor=cores_estagios[i], label=f'Estágio {i+1}'))
+                    
+                    ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1))
+                    
                     plt.xticks(rotation=45, ha='right')
                     plt.ylim(0, 100)
                     plt.tight_layout()
@@ -3702,7 +3724,7 @@ def gerar_pdf_escola_turma_fundamental():
                     tabela = Table(tabela_dados, colWidths=[80] + [60]*5)
 
                     # Estilo da tabela
-                    estilo = [
+                    estilo_tabela = [
                         ('BACKGROUND', (0, 0), (-1, 0), '#4472C4'),
                         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -3712,29 +3734,22 @@ def gerar_pdf_escola_turma_fundamental():
                         ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
                         ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')),
                     ]
-
                     
                     # Aplicar destaque na tabela (apenas se houver mais de uma habilidade)
                     if habilidade_destaque and len(habilidades_data) > 1:
                         idx_destaque = habilidades_completas.index(habilidade_destaque)
-                        estilo.extend([
+                        estilo_tabela.extend([
                             ('BACKGROUND', (0, idx_destaque+1), (-1, idx_destaque+1), '#fff3bf'),
                             ('TEXTCOLOR', (0, idx_destaque+1), (-1, idx_destaque+1), '#d63900'),
                             ('FONTNAME', (0, idx_destaque+1), (-1, idx_destaque+1), 'Helvetica-Bold')
                         ])
                     
-                    tabela.setStyle(TableStyle(estilo))
+                    tabela.setStyle(TableStyle(estilo_tabela))
                     story.append(tabela)
                     story.append(Spacer(1, 20))
                     # Inserir quebra de página antes de cada unidade, exceto a primeira
                     story.append(PageBreak())
-                        
         
-        # Rodapé
-        #data_emissao = datetime.now().strftime("%d/%m/%Y")
-        #rodape = Paragraph(f"<i>Relatório gerado em {data_emissao} - Sistema de Avaliação</i>", styles['Italic'])
-        #story.append(rodape)
-
         doc.build(story)
         buffer.seek(0)
 
@@ -4140,7 +4155,21 @@ def gerar_pdf_por_ano_serie():
             
             ax.set_ylabel('Porcentagem de Alunos')
             ax.set_title(f'Distribuição por Estágio - {campo}')
-            ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
+            
+            # INVERTER A LEGENDA - Estágio mais alto para o mais baixo
+            if is_primeira_escrita:
+                # Para Primeira Escrita (estágios 8 ao 1)
+                legend_elements = []
+                for i in range(len(cores)-1, -1, -1):  # Do índice 7 até 0 (estágio 8 até 1)
+                    legend_elements.append(Patch(facecolor=cores[i], label=labels_estagios[i]))
+            else:
+                # Para campos normais (estágios 5 ao 1)
+                legend_elements = []
+                for i in range(4, -1, -1):  # Do índice 4 até 0 (estágio 5 até 1)
+                    legend_elements.append(Patch(facecolor=cores[i], label=labels_estagios[i]))
+            
+            ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1))
+            
             plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
             
@@ -4231,7 +4260,6 @@ def gerar_pdf_por_ano_serie():
 
 
 
-
 @app.route('/gerar-pdf-todas-escolas-infantil')
 @admin_required
 def gerar_pdf_todas_escolas_infantil():
@@ -4241,6 +4269,7 @@ def gerar_pdf_todas_escolas_infantil():
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         import numpy as np
+        from matplotlib.patches import Patch
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import getSampleStyleSheet
@@ -4619,7 +4648,21 @@ def gerar_pdf_todas_escolas_infantil():
                 
                 ax.set_ylabel('Porcentagem de Alunos')
                 ax.set_title(f'Distribuição por Estágio - {campo} (Todas as Escolas)')
-                ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
+                
+                # INVERTER A LEGENDA - Estágio mais alto para o mais baixo
+                if is_primeira_escrita:
+                    # Para Primeira Escrita (estágios 8 ao 1)
+                    legend_elements = []
+                    for i in range(len(cores)-1, -1, -1):  # Do índice 7 até 0 (estágio 8 até 1)
+                        legend_elements.append(Patch(facecolor=cores[i], label=labels_estagios[i]))
+                else:
+                    # Para campos normais (estágios 5 ao 1)
+                    legend_elements = []
+                    for i in range(4, -1, -1):  # Do índice 4 até 0 (estágio 5 até 1)
+                        legend_elements.append(Patch(facecolor=cores[i], label=labels_estagios[i]))
+                
+                ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1))
+                
                 plt.xticks(rotation=45, ha='right')
                 plt.tight_layout()
                 
@@ -4861,8 +4904,6 @@ def gerar_pdf_todas_escolas_infantil():
             conn.close()
 
 
-
-
 @app.route('/gerar-pdf-todas-escolas-fundamental')
 @admin_required
 def gerar_pdf_todas_escolas_fundamental():
@@ -4872,6 +4913,7 @@ def gerar_pdf_todas_escolas_fundamental():
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         import numpy as np
+        from matplotlib.patches import Patch
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import getSampleStyleSheet
@@ -5135,7 +5177,7 @@ def gerar_pdf_todas_escolas_fundamental():
                             fontsize=10)
                 
                 ax.set_ylabel('Média dos Estágios')
-                ax.set_title(f'Média por Unidade Temática - {disciplina}')
+                ax.set_title(f'Média por Unidade Temática - {disciplina}', y=1.1)
                 plt.xticks(rotation=45, ha='right')
                 plt.ylim(0, 5)
                 plt.tight_layout()
@@ -5270,7 +5312,7 @@ def gerar_pdf_todas_escolas_fundamental():
                         # Adicionar valores nas barras
                         for bar in barras:
                             height = bar.get_height()
-                            if height > 5:  # Só mostra porcentagem se for maior que 5%
+                            if height > 5:
                                 ax.text(bar.get_x() + bar.get_width()/2., 
                                         bar.get_y() + height/2,
                                         f'{height:.0f}%', 
@@ -5280,10 +5322,17 @@ def gerar_pdf_todas_escolas_fundamental():
                         
                         bottom += valores
                     
-                    # Configurações do gráfico
+                    # Configurações do gráfico com LEGENDA INVERTIDA
                     ax.set_ylabel('Porcentagem de Alunos')
                     ax.set_title(f'Distribuição por Estágio - {unidade}')
-                    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
+                    
+                    # INVERTER A LEGENDA - Estágio 5 ao 1 (de cima para baixo)
+                    legend_elements = []
+                    for i in range(4, -1, -1):  # Do índice 4 (estágio 5) até 0 (estágio 1)
+                        legend_elements.append(Patch(facecolor=cores_estagios[i], label=f'Estágio {i+1}'))
+                    
+                    ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1))
+                    
                     plt.xticks(rotation=45, ha='right')
                     plt.ylim(0, 100)
                     plt.tight_layout()
@@ -5326,7 +5375,7 @@ def gerar_pdf_todas_escolas_fundamental():
                     tabela = Table(tabela_dados, colWidths=[80] + [60]*5)
                     
                     # Estilo da tabela
-                    estilo = [
+                    estilo_tabela = [
                         ('BACKGROUND', (0, 0), (-1, 0), '#4472C4'),
                         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -5340,13 +5389,13 @@ def gerar_pdf_todas_escolas_fundamental():
                     # Aplicar destaque na tabela
                     if habilidade_destaque and len(habilidades_data) > 1:
                         idx_destaque = habilidades_codigos.index(habilidade_destaque) + 1
-                        estilo.extend([
+                        estilo_tabela.extend([
                             ('BACKGROUND', (0, idx_destaque), (-1, idx_destaque), '#fff3bf'),
                             ('TEXTCOLOR', (0, idx_destaque), (-1, idx_destaque), '#d63900'),
                             ('FONTNAME', (0, idx_destaque), (-1, idx_destaque), 'Helvetica-Bold')
                         ])
                     
-                    tabela.setStyle(TableStyle(estilo))
+                    tabela.setStyle(TableStyle(estilo_tabela))
                     story.append(tabela)
                     story.append(Spacer(1, 20))
                     story.append(PageBreak())
@@ -5491,12 +5540,10 @@ def gerar_pdf_todas_escolas_fundamental():
         
     except Exception as e:
         app.logger.error(f"Erro ao gerar PDF consolidado fundamental: {str(e)}", exc_info=True)
-        return render_template('error.html', error="Erro ao gerar relatório consolidado"), 500
+        return render_template('error.html', error="Erro ao gerar relatório consolidado"), 500   
     finally:
         if 'conn' in locals():
             conn.close()
-
-
 
 
 if __name__ == '__main__':
