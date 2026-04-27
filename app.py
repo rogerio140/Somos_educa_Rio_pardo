@@ -251,7 +251,7 @@ def login():
         if not id_plurall:
             return render_template('login.html', error="Informe o ID Plurall")
 
-        # Acesso como administrador
+        # Acesso como administrador - SEMPRE permitido (não é bloqueado)
         if id_plurall == "Admin123":
             session.clear()
             session['user_id'] = "admin"
@@ -260,6 +260,36 @@ def login():
             app.logger.debug("Login como administrador bem-sucedido")
             return redirect(url_for('painel_admin'))
 
+        # ===== VERIFICAÇÃO DE PERÍODO PARA PROFESSORES =====
+        acesso_permitido, mensagem_bloqueio = verificar_acesso_professor()
+        
+        if not acesso_permitido:
+            # Buscar informações para mensagem personalizada
+            conn = None
+            try:
+                conn = get_db_connection()
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT p.nome 
+                        FROM professores p
+                        WHERE p.id_plurall = %s
+                    """, (id_plurall,))
+                    professor = cur.fetchone()
+                    nome_professor = professor[0] if professor else "Professor"
+            except:
+                nome_professor = "Professor"
+            finally:
+                if conn:
+                    conn.close()
+            
+            # Renderizar página de bloqueio com mensagem específica
+            return render_template('acesso_bloqueado.html', 
+                                 nome_professor=nome_professor,
+                                 mensagem=mensagem_bloqueio,
+                                 contato=PERIODO_ACESSO_PROFESSORES['contato'],
+                                 data_fim=PERIODO_ACESSO_PROFESSORES['data_fim'].strftime('%d/%m/%Y às %H:%M'))
+        
+        # ===== CONTINUAÇÃO DO LOGIN NORMAL =====
         conn = None
         try:
             conn = get_db_connection()
@@ -307,8 +337,14 @@ def login():
             if conn:
                 conn.close()
 
-    return render_template('login.html')
-
+    # Método GET - mostrar página de login com aviso de período, se aplicável
+    acesso_permitido, _ = verificar_acesso_professor()
+    tempo_restante = get_tempo_restante() if acesso_permitido else None
+    
+    return render_template('login.html', 
+                         periodo_ativo=acesso_permitido,
+                         tempo_restante=tempo_restante,
+                         data_fim=PERIODO_ACESSO_PROFESSORES['data_fim'].strftime('%d/%m/%Y às %H:%M'))
 
 
 
@@ -5545,6 +5581,84 @@ def gerar_pdf_todas_escolas_fundamental():
         if 'conn' in locals():
             conn.close()
 
+# No seu app.py ou rota do Flask
+from datetime import datetime
+import pytz  # Instale: pip install pytz
+
+@app.context_processor
+def utility_processor():
+    def verificar_disponibilidade():
+        # Definir fuso horário do Brasil (opcional mas recomendado)
+        fuso = pytz.timezone('America/Sao_Paulo')
+        
+        # Data e hora de liberação (ex: 01/05/2026 às 14:30)
+        data_liberacao = datetime(2026, 4, 29, 0, 0, 0)  # Ano, mês, dia, hora, minuto, segundo
+        data_liberacao = fuso.localize(data_liberacao)
+        
+        # Data/hora atual
+        agora = datetime.now(fuso)
+        
+        # Retorna True se estiver disponível (após data/hora liberação)
+        return agora >= data_liberacao
+    
+    return dict(relatorios_disponiveis=verificar_disponibilidade())
+
+
+
+
+
+
+
+
+
+
+
+# Adicione no início do arquivo, junto com os outros imports
+from datetime import datetime
+import pytz
+from functools import wraps
+
+# Configuração do período de acesso para professores
+PERIODO_ACESSO_PROFESSORES = {
+    'data_inicio': datetime(2026, 4, 27, 0, 0, 0),
+    'data_fim': datetime(2026, 4, 29, 0, 0, 0),
+    'mensagem': "O período de aplicação dos formulários de acompanhamento foi encerrado. O acesso dos professores ao sistema está temporariamente bloqueado para consolidação dos dados.",
+    'contato': "Preencha o formulário de suporte para atendimento",
+    'link_suporte': "https://forms.gle/FCARXEPmneLHx1yT6"
+}
+
+def verificar_acesso_professor():
+    """Verifica se o professor ainda pode acessar o sistema baseado no período definido"""
+    fuso = pytz.timezone('America/Sao_Paulo')
+    agora = datetime.now(fuso)
+    
+    # Converter as datas para o fuso horário do Brasil
+    data_fim = fuso.localize(PERIODO_ACESSO_PROFESSORES['data_fim'])
+    data_inicio = fuso.localize(PERIODO_ACESSO_PROFESSORES['data_inicio'])
+    
+    # Verificar se está dentro do período permitido
+    if agora < data_inicio:
+        return False, "O período de acesso ainda não começou. Aguarde a liberação da coordenação."
+    elif agora > data_fim:
+        return False, PERIODO_ACESSO_PROFESSORES['mensagem']
+    
+    return True, None
+
+def get_tempo_restante():
+    """Retorna o tempo restante para o fim do período (para exibir mensagem)"""
+    fuso = pytz.timezone('America/Sao_Paulo')
+    agora = datetime.now(fuso)
+    data_fim = fuso.localize(PERIODO_ACESSO_PROFESSORES['data_fim'])
+    
+    if agora > data_fim:
+        return None
+    
+    diferenca = data_fim - agora
+    dias = diferenca.days
+    horas = diferenca.seconds // 3600
+    minutos = (diferenca.seconds % 3600) // 60
+    
+    return f"{dias} dias, {horas} horas e {minutos} minutos"
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -72,7 +72,7 @@
     
          <!-- Segment Filter -->
         <!-- Segment Filter Harmonizado -->
-   
+    <!--
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Gerar Relatórios</h5>
@@ -104,7 +104,62 @@
             </form>
         </div>
     </div>
+  -->
     
+    {% if not relatorios_disponiveis %}
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Gerar Relatórios</h5>
+    </div>
+    <div class="card-body text-center">
+        <div class="alert alert-warning mb-0">
+            <i class="fas fa-tools"></i> 
+            <strong>Relatórios disponíveis apenas após o período de aplicação dos formulários de acompanhamento.</strong>
+            <br>
+            <small>
+                <i class="fas fa-calendar-alt"></i> <strong>Previsão de liberação:</strong> 29/04/2026 às 00:00
+            </small>
+            <br>
+            <small class="text-muted">
+                <i class="fas fa-edit"></i> <strong>Período de aplicação em andamento:</strong> Continue acompanhando o desenvolvimento dos alunos.
+            </small>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Gerar Relatórios</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{{ url_for('painel_admin') }}" class="row g-3 align-items-end">
+            <div class="col-md-6 col-lg-4">
+                <label for="segmento_id" class="form-label">Escolha o segmento para gerar o relatório:</label>
+                <select class="form-select" id="segmento_id" name="segmento_id"
+                        onchange="if(this.value==1) window.location='{{ url_for('painel_infantil') }}'; 
+                                else if(this.value==2) window.location='{{ url_for('painel_fundamental') }}'; 
+                                else window.location='{{ url_for('painel_admin') }}';">
+                    <option value="">Selecione um Segmento</option>
+                    <option value="1" {% if segmento_selecionado == 1 %}selected{% endif %}>
+                        Ensino Infantil
+                    </option>
+                    <option value="2" {% if segmento_selecionado == 2 %}selected{% endif %}>
+                        Ensino Fundamental
+                    </option>
+                </select>
+            </div>
+            {% if segmento_selecionado %}
+            <div class="col-md-2">
+                <a href="{{ url_for('painel_admin') }}" class="btn btn-outline-secondary mt-4">
+                    Limpar
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endif %}
+
  
 
 
